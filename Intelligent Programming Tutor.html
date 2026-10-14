@@ -1,0 +1,907 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Intelligent Programming Tutor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: chat-first workbench. Left, the tutor conversation. Right, a progress rail with the syllabus checklist. Dark navy with amber and mint, taken from the project deck. */
+:root{
+  color-scheme:dark;
+  --bg:#141A2C; --panel:#1B2338; --panel2:#222C48; --line:#2D3858;
+  --ink:#F4F6FB; --muted:#93A1BC; --amber:#F2B84B; --on-amber:#141A2C;
+  --mint:#5ED3A4; --coral:#F28B7C; --code:#0F1424; --focus:#8FB4FF;
+  --sans:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+button,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app{height:100%;display:flex;flex-direction:column;gap:16px;padding-block:16px;max-width:1280px;margin:0 auto}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.logo{flex:none;width:44px;height:44px;border-radius:50%;background:var(--amber);color:var(--on-amber);display:grid;place-items:center;font:700 15px var(--mono)}
+h1{margin:0;font-size:22px;line-height:1.15;font-weight:900;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:2px 0 0;color:var(--muted);font-size:13px}
+.langs{display:flex;flex-wrap:wrap;gap:6px}
+.lang{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:500;font-size:14px;color:var(--muted)}
+.lang[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--on-amber)}
+.lang:hover:not([aria-pressed="true"]){color:var(--ink);border-color:var(--muted)}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px}
+.chat{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;gap:12px}
+.log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:18px;padding-right:4px}
+.msg{display:flex;gap:10px;min-width:0}
+.msg .av{flex:none;width:28px;height:28px;border-radius:50%;background:var(--amber);color:var(--on-amber);display:grid;place-items:center;font:700 10px var(--mono);margin-top:2px}
+.msg .body{min-width:0;flex:1;display:flex;flex-direction:column;gap:10px}
+.msg.user{justify-content:flex-end}
+.msg.user .body{flex:none;max-width:85%;background:var(--panel2);border-radius:12px;padding:8px 12px}
+.msg.user pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.5 var(--mono)}
+.msg.user p{margin:0;overflow-wrap:anywhere}
+.body p{margin:0;overflow-wrap:anywhere}
+.body h3{margin:0;font-size:17px;font-weight:700}
+.body ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.body strong{font-weight:700}
+code{font:13px var(--mono);background:var(--code);border-radius:4px;padding:1px 5px;color:var(--amber)}
+.note{color:var(--muted);font-size:14px}
+.cb{background:var(--code);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cb-h{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-bottom:1px solid var(--line);font:500 11px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.cb pre{margin:0;padding:10px 12px;overflow-x:auto;font:13px/1.6 var(--mono)}
+.cb pre code{background:none;padding:0;color:var(--ink);font:inherit}
+.ln{display:block;white-space:pre}
+.ln i{display:inline-block;width:2.2em;color:var(--muted);font-style:normal;user-select:none}
+.ln.bad{background:rgba(242,184,75,.16);box-shadow:inset 3px 0 0 var(--amber)}
+.findings{display:flex;flex-direction:column;gap:8px}
+.f{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:4px 10px;align-items:baseline;background:var(--panel2);border-radius:10px;padding:10px 12px}
+.pill{font:700 10px var(--sans);letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:2px 8px;color:var(--on-amber)}
+.pill.error{background:var(--coral)} .pill.warn{background:var(--amber)} .pill.tip{background:var(--mint)}
+.f .where{font:12px var(--mono);color:var(--muted)}
+.f .what{min-width:0;overflow-wrap:anywhere}
+.f .fix{grid-column:1/-1;color:var(--muted);font-size:14px}
+.f .fix button{margin-left:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:6px 14px;font-size:14px;cursor:pointer;color:var(--ink)}
+.chip:hover{border-color:var(--amber);color:var(--amber)}
+.mini{border:1px solid var(--line);background:none;border-radius:999px;padding:1px 10px;font-size:12px;cursor:pointer;color:var(--amber)}
+.mini:hover{border-color:var(--amber)}
+.composer{display:flex;gap:10px;align-items:flex-end}
+textarea{flex:1;min-width:0;resize:none;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:14px/1.5 var(--mono);max-height:220px}
+textarea::placeholder{color:var(--muted);font-family:var(--sans)}
+.send{flex:none;border:0;border-radius:10px;background:var(--amber);color:var(--on-amber);font-weight:700;padding:11px 20px;cursor:pointer}
+.send:hover{filter:brightness(1.08)}
+.hint{margin:0;color:var(--muted);font-size:12px}
+.quiz{background:var(--panel2);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.quiz .qmeta{font:500 11px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mint)}
+.quiz .q{font-weight:500;font-size:16px;overflow-wrap:anywhere}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;font:14px var(--mono);overflow-wrap:anywhere}
+.opt:hover:not(:disabled){border-color:var(--amber)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--mint);background:rgba(94,211,164,.14)}
+.opt.wrong{border-color:var(--coral);background:rgba(242,139,124,.14)}
+.verdict{margin:0;font-weight:500}
+.verdict.right{color:var(--mint)} .verdict.wrong{color:var(--coral)}
+.side{min-width:0;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.card h2{margin:0;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#plang{font-size:13px;color:var(--muted)}
+.bar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--mint);border-radius:99px;transition:width .35s ease}
+#plabel,#qscore{margin:0;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.topics{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.topics button{width:100%;display:flex;align-items:center;gap:10px;background:none;border:0;border-radius:8px;padding:7px 6px;cursor:pointer;text-align:left}
+.topics button:hover{background:var(--panel2)}
+.tick{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700;color:transparent}
+.topics .done .tick{background:var(--amber);border-color:var(--amber);color:var(--on-amber)}
+.topics .done.passed .tick{background:var(--mint);border-color:var(--mint)}
+.topics .t{flex:1;min-width:0}
+.topics .s{font-size:12px;color:var(--muted)}
+.how dl{margin:0;display:flex;flex-direction:column;gap:8px}
+.how dt{font-weight:500;font-size:14px}
+.how dd{margin:0;color:var(--muted);font-size:13px}
+.solid{align-self:flex-start;border:0;border-radius:10px;background:var(--mint);color:var(--on-amber);font-weight:700;padding:8px 16px;cursor:pointer}
+.reset{align-self:flex-start;background:none;border:0;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;padding:4px 0}
+@media (max-width:900px){
+  html,body{height:auto}
+  .app{height:auto}
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .log{max-height:62vh;min-height:300px}
+  .side{overflow:visible}
+  .f{grid-template-columns:auto minmax(0,1fr)}
+  .f .where{grid-column:2}
+}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">&lt;/&gt;</span>
+      <div><h1>Intelligent Programming Tutor</h1><p class="sub">Rule-based and offline. Python, JavaScript, Java and C++.</p></div>
+    </div>
+    <div class="langs" id="langs" role="group" aria-label="Language"></div>
+  </header>
+  <main class="grid">
+    <section class="chat" aria-label="Tutor chat">
+      <div class="log" id="log" role="log" aria-live="polite"></div>
+      <div class="chips" id="chips"></div>
+      <form class="composer" id="form">
+        <label class="sr" for="input">Message</label>
+        <textarea id="input" rows="2" placeholder="Ask about a topic, or paste code to review"></textarea>
+        <button class="send" type="submit">Send</button>
+      </form>
+      <p class="hint">Enter sends, Shift+Enter adds a line. Everything runs in this page and nothing leaves it.</p>
+    </section>
+    <aside class="side" aria-label="Progress">
+      <section class="card">
+        <div class="card-head"><h2>Progress Tracker</h2><span id="plang"></span></div>
+        <div class="bar"><i id="barfill"></i></div>
+        <p id="plabel"></p>
+        <ul class="topics" id="topics"></ul>
+      </section>
+      <section class="card">
+        <h2>Quiz</h2>
+        <p id="qscore"></p>
+        <button class="solid" id="qstart" type="button">Start a quiz</button>
+      </section>
+      <section class="card how">
+        <h2>How it answers</h2>
+        <dl>
+          <dt>Concept Engine</dt><dd>Matches your question to a topic and language, then returns an explanation and example.</dd>
+          <dt>Code Analyzer</dt><dd>Detects the language, checks brackets and quotes, and flags common beginner slips.</dd>
+          <dt>Quiz Engine</dt><dd>Multiple-choice questions with instant scoring.</dd>
+          <dt>Progress Tracker</dt><dd>Fills in the syllabus as you cover topics.</dd>
+        </dl>
+      </section>
+      <button class="reset" id="reset" type="button">Reset progress</button>
+    </aside>
+  </main>
+</div>
+<script>
+/* ---------- Knowledge layer: languages and the eight core topics ---------- */
+const LANGS = {
+  py:   { name: 'Python' },
+  js:   { name: 'JavaScript' },
+  java: { name: 'Java' },
+  cpp:  { name: 'C++' }
+};
+const LANG_ORDER = ['py', 'js', 'java', 'cpp'];
+
+const TOPICS = [
+  {
+    id: 'variables', title: 'Variables',
+    concept: 'A variable is a named place in memory that holds a value. You create it by giving it a name and a first value, and you can change that value later.',
+    mistakes: ['Using a variable before giving it a value.', 'Misspelling the name: age and Age are different variables.'],
+    ex: {
+      py:   { code: `age = 21\nname = "Ada"\nage = age + 1`, note: 'Python works out the type for you, so no keyword is needed.' },
+      js:   { code: `let age = 21;\nconst name = "Ada";\nage = age + 1;`, note: 'Use const by default. Switch to let only when the value must change.' },
+      java: { code: `int age = 21;\nString name = "Ada";\nage = age + 1;`, note: 'Java needs the type written before the name.' },
+      cpp:  { code: `int age = 21;\nstd::string name = "Ada";\nage = age + 1;`, note: 'Declare the type first. std::string needs #include <string>.' }
+    }
+  },
+  {
+    id: 'datatypes', title: 'Data Types',
+    concept: 'Every value has a type that decides what you can do with it. The basic ones are whole numbers, decimals, text and true/false values.',
+    mistakes: ['Adding a number to text and expecting arithmetic.', 'Forgetting that integer division drops the decimal part in Java and C++.'],
+    ex: {
+      py:   { code: `n = 7        # int\nx = 3.14     # float\ns = "hi"     # str\nok = True    # bool\nprint(type(n))`, note: 'type() shows what a value is.' },
+      js:   { code: `let n = 7;        // number\nlet s = "hi";     // string\nlet ok = true;    // boolean\nconsole.log(typeof n);`, note: 'JavaScript has one number type for both whole numbers and decimals.' },
+      java: { code: `int n = 7;\ndouble x = 3.14;\nString s = "hi";\nboolean ok = true;`, note: 'String starts with a capital letter. int and boolean do not.' },
+      cpp:  { code: `int n = 7;\ndouble x = 3.14;\nstd::string s = "hi";\nbool ok = true;`, note: 'The true/false type is spelled bool here and boolean in Java.' }
+    }
+  },
+  {
+    id: 'operators', title: 'Operators',
+    concept: 'Operators combine values. Arithmetic operators do maths (+ - * / %), comparison operators give true or false (== < >), and logical operators join conditions.',
+    mistakes: ['Writing = when you mean == in a comparison.', 'Expecting 7 / 2 to be 3.5 when both numbers are integers in Java or C++.'],
+    ex: {
+      py:   { code: `rest = 7 % 2          # 1\nwhole = 7 // 2        # 3\nok = 3 < 5 and not False`, note: 'Python spells the logical operators and, or and not.' },
+      js:   { code: `const rest = 7 % 2;\nconst ok = 3 < 5 && !false;\nconsole.log(3 === "3");   // false`, note: 'Prefer === to ==. It does not convert types behind your back.' },
+      java: { code: `int rest = 7 % 2;\nint half = 7 / 2;         // 3\nboolean ok = 3 < 5 && !false;`, note: 'Dividing two ints gives an int.' },
+      cpp:  { code: `int rest = 7 % 2;\nint half = 7 / 2;         // 3\nbool ok = 3 < 5 && !false;`, note: 'Cast one side to double if you want 3.5.' }
+    }
+  },
+  {
+    id: 'conditionals', title: 'Conditionals',
+    concept: 'A conditional runs a block of code only when a condition is true. Chain extra conditions with else-if and finish with else for everything left over.',
+    mistakes: ['Using = instead of == inside the condition.', 'Mixing up the order of conditions so a broad test catches everything first.'],
+    ex: {
+      py:   { code: `if score >= 90:\n    grade = "A"\nelif score >= 80:\n    grade = "B"\nelse:\n    grade = "C"`, note: 'The colon and the indentation mark each block.' },
+      js:   { code: `let grade;\nif (score >= 90) {\n  grade = "A";\n} else if (score >= 80) {\n  grade = "B";\n} else {\n  grade = "C";\n}`, note: 'The condition goes in parentheses and the block in braces.' },
+      java: { code: `String grade;\nif (score >= 90) {\n    grade = "A";\n} else if (score >= 80) {\n    grade = "B";\n} else {\n    grade = "C";\n}`, note: 'Compare strings with .equals(), not ==.' },
+      cpp:  { code: `std::string grade;\nif (score >= 90) {\n    grade = "A";\n} else if (score >= 80) {\n    grade = "B";\n} else {\n    grade = "C";\n}`, note: 'if (x = 3) assigns instead of comparing, and compiles without an error.' }
+    }
+  },
+  {
+    id: 'loops', title: 'Loops',
+    concept: 'A loop repeats a block of code. Use a for loop when you know how many times to repeat, and a while loop when you repeat until something changes.',
+    mistakes: ['Off-by-one errors: i <= 5 runs six times when counting from 0.', 'A while loop whose condition never becomes false.'],
+    ex: {
+      py:   { code: `for i in range(3):\n    print(i)        # 0, 1, 2\n\nn = 3\nwhile n > 0:\n    n -= 1`, note: 'range(3) stops before 3.' },
+      js:   { code: `for (let i = 0; i < 3; i++) {\n  console.log(i);     // 0, 1, 2\n}\n\nlet n = 3;\nwhile (n > 0) {\n  n--;\n}`, note: 'A for header has three parts: start, condition, step.' },
+      java: { code: `for (int i = 0; i < 3; i++) {\n    System.out.println(i);\n}\n\nint n = 3;\nwhile (n > 0) {\n    n--;\n}`, note: 'The loop variable only exists inside the loop.' },
+      cpp:  { code: `for (int i = 0; i < 3; i++) {\n    std::cout << i << std::endl;\n}\n\nint n = 3;\nwhile (n > 0) {\n    n--;\n}`, note: 'do { } while (cond); always runs the body at least once.' }
+    }
+  },
+  {
+    id: 'functions', title: 'Functions',
+    concept: 'A function is a named block of code you can run again and again. It can take inputs called parameters and hand a result back with return.',
+    mistakes: ['Printing a value inside the function when you meant to return it.', 'Calling the function with the wrong number of arguments.'],
+    ex: {
+      py:   { code: `def add(a, b):\n    return a + b\n\nprint(add(2, 3))     # 5`, note: 'def starts the function and the body is indented.' },
+      js:   { code: `function add(a, b) {\n  return a + b;\n}\nconst sub = (a, b) => a - b;\nconsole.log(add(2, 3));   // 5`, note: 'Arrow functions are a shorter way to write small functions.' },
+      java: { code: `static int add(int a, int b) {\n    return a + b;\n}\n// call it with add(2, 3)`, note: 'The return type comes first. void means nothing is returned.' },
+      cpp:  { code: `int add(int a, int b) {\n    return a + b;\n}\n// call it with add(2, 3)`, note: 'Declare or define a function before the code that calls it.' }
+    }
+  },
+  {
+    id: 'arrays', title: 'Arrays & Lists',
+    concept: 'An array or list stores many values under one name. Each item has a position called an index, and counting starts at 0.',
+    mistakes: ['Reading one past the end: a list of 3 items has indexes 0, 1 and 2.', 'Forgetting that Java arrays have a fixed size.'],
+    ex: {
+      py:   { code: `nums = [4, 8, 15]\nnums.append(16)\nprint(nums[0], len(nums))   # 4 4`, note: 'Python lists grow as needed.' },
+      js:   { code: `const nums = [4, 8, 15];\nnums.push(16);\nconsole.log(nums[0], nums.length);   // 4 4`, note: 'length is a property, so no parentheses.' },
+      java: { code: `int[] nums = {4, 8, 15};\nSystem.out.println(nums[0] + " " + nums.length);\n\nArrayList<Integer> list = new ArrayList<>();\nlist.add(16);`, note: 'Use ArrayList when the size can change.' },
+      cpp:  { code: `std::vector<int> nums = {4, 8, 15};\nnums.push_back(16);\nstd::cout << nums[0] << " " << nums.size();`, note: 'std::vector needs #include <vector>.' }
+    }
+  },
+  {
+    id: 'classes', title: 'Classes & Objects',
+    concept: 'A class is a blueprint that bundles data and the functions that work on it. An object is one thing built from that blueprint.',
+    mistakes: ['Forgetting self (Python) or this (JavaScript) when using a field.', 'Calling a method on the class instead of on an object.'],
+    ex: {
+      py:   { code: `class Dog:\n    def __init__(self, name):\n        self.name = name\n\n    def bark(self):\n        return self.name + " says woof"\n\nd = Dog("Rex")`, note: '__init__ is the constructor and self is the object itself.' },
+      js:   { code: `class Dog {\n  constructor(name) {\n    this.name = name;\n  }\n  bark() {\n    return this.name + " says woof";\n  }\n}\nconst d = new Dog("Rex");`, note: 'new builds the object and runs the constructor.' },
+      java: { code: `class Dog {\n    String name;\n    Dog(String name) { this.name = name; }\n    String bark() { return name + " says woof"; }\n}\n// Dog d = new Dog("Rex");`, note: 'The constructor has the same name as the class and no return type.' },
+      cpp:  { code: `class Dog {\npublic:\n    std::string name;\n    Dog(std::string n) : name(n) {}\n    std::string bark() { return name + " says woof"; }\n};\n// Dog d("Rex");`, note: 'Members are private until you write public:. The class ends with a semicolon.' }
+    }
+  }
+];
+const TOPIC_BY_ID = Object.fromEntries(TOPICS.map(t => [t.id, t]));
+
+/* ---------- Quiz bank: one question per topic per language ---------- */
+/* [topic, question, options, correctIndex, explanation] */
+const QUIZ_RAW = {
+  py: [
+    ['variables', 'Which line creates a variable named count with the value 5 in Python?', ['int count = 5', 'count = 5', 'var count = 5', 'let count := 5'], 1, 'Python needs no type keyword. You just assign with =.'],
+    ['datatypes', 'What does type(3.0) report in Python?', ['int', 'float', 'str', 'double'], 1, 'A number with a decimal point is a float.'],
+    ['operators', 'What is 7 // 2 in Python?', ['3.5', '3', '4', '1'], 1, '// is floor division. It drops the remainder.'],
+    ['conditionals', 'Which keyword adds a second condition after if in Python?', ['else if', 'elseif', 'elif', 'otherwise'], 2, 'Python shortens else if to elif.'],
+    ['loops', 'How many times does for i in range(3) run its body?', ['2', '3', '4', 'Forever'], 1, 'range(3) gives 0, 1 and 2, so three passes.'],
+    ['functions', 'Which keyword defines a function in Python?', ['function', 'fun', 'def', 'func'], 2, 'def starts a function definition.'],
+    ['arrays', 'How do you add 9 to the end of the list nums?', ['nums.add(9)', 'nums.push(9)', 'nums.append(9)', 'nums += 9'], 2, 'append adds one item to the end of a list.'],
+    ['classes', 'What is the constructor method called in a Python class?', ['__init__', 'constructor', 'init', 'new'], 0, '__init__ runs when you create an object.']
+  ],
+  js: [
+    ['variables', 'Which declaration cannot be reassigned later?', ['var', 'let', 'const', 'dynamic'], 2, 'const binds a name to one value for good.'],
+    ['datatypes', 'What does typeof 42 return?', ['"integer"', '"number"', '"int"', '"numeric"'], 1, 'JavaScript has a single number type.'],
+    ['operators', 'What is the result of 3 === "3"?', ['true', 'false', 'An error', 'undefined'], 1, '=== compares type as well as value. A number is not a string.'],
+    ['conditionals', 'Which is the correct if syntax in JavaScript?', ['if x > 3 {', 'if (x > 3) {', 'if x > 3:', 'if [x > 3] {'], 1, 'The condition sits inside parentheses.'],
+    ['loops', 'Which header runs a loop 5 times, counting from 0?', ['for (let i = 0; i < 5; i++)', 'for (let i = 0; i <= 5; i++)', 'for (i = 1; i < 5; i++)', 'for (let i = 0; i > 5; i++)'], 0, 'Starting at 0 and stopping before 5 gives five passes.'],
+    ['functions', 'What does the arrow function (a, b) => a + b return for (2, 3)?', ['5', '23', 'undefined', 'a + b'], 0, 'With a single expression the result is returned for you.'],
+    ['arrays', 'Which method adds an item to the end of an array?', ['push', 'append', 'add', 'insert'], 0, 'push adds to the end.'],
+    ['classes', 'Which keyword creates an object from a class?', ['make', 'new', 'create', 'object'], 1, 'new builds the object and calls the constructor.']
+  ],
+  java: [
+    ['variables', 'Which line is a valid Java variable declaration?', ['age = 21;', 'int age = 21;', 'var int age = 21;', 'integer age = 21;'], 1, 'Java needs the type, then the name, then the value.'],
+    ['datatypes', 'Which type holds true or false?', ['boolean', 'bool', 'bit', 'truth'], 0, 'Java spells it out as boolean.'],
+    ['operators', 'What is 7 / 2 when both numbers are int?', ['3.5', '3', '4', 'An error'], 1, 'Integer division drops the decimal part.'],
+    ['conditionals', 'Which expression compares the contents of two Strings?', ['a == b', 'a = b', 'a.equals(b)', 'a === b'], 2, '== checks whether both names point at the same object. equals checks the text.'],
+    ['loops', 'Which is a valid Java for loop header?', ['for (int i = 0; i < 3; i++)', 'for i in range(3)', 'for (i < 3)', 'foreach i = 0 to 3'], 0, 'Java uses the three-part header with semicolons.'],
+    ['functions', 'What does void mean in a method signature?', ['It returns nothing', 'It returns null', 'It takes no arguments', 'It is private'], 0, 'void marks a method that does not return a value.'],
+    ['arrays', 'How do you read the first element of int[] nums?', ['nums.first()', 'nums(0)', 'nums[0]', 'nums{0}'], 2, 'Square brackets with an index, starting at 0.'],
+    ['classes', 'A Java constructor has the same name as what?', ['The file extension', 'The class', 'main', 'Its first parameter'], 1, 'The constructor shares the class name and has no return type.']
+  ],
+  cpp: [
+    ['variables', 'Which line declares an integer variable in C++?', ['int x = 4;', 'x := 4;', 'integer x = 4;', 'let x = 4;'], 0, 'Type, name, then the value.'],
+    ['datatypes', 'Which header provides std::string?', ['<string>', '<text>', '<chars>', '<str>'], 0, '#include <string> brings in std::string.'],
+    ['operators', 'What does 7 % 3 give?', ['2', '1', '3', '0'], 1, '% returns the remainder. 7 divided by 3 leaves 1.'],
+    ['conditionals', 'Which condition contains a common bug?', ['if (x == 3)', 'if (x = 3)', 'if (x != 3)', 'if (x >= 3)'], 1, 'A single = assigns 3 to x instead of comparing.'],
+    ['loops', 'Which loop always runs its body at least once?', ['for', 'while', 'do ... while', 'range-for'], 2, 'do ... while checks the condition after the body.'],
+    ['functions', 'What must a C++ function state before its name?', ['A return type', 'The keyword def', 'The keyword function', 'Nothing'], 0, 'Every function starts with its return type, such as int or void.'],
+    ['arrays', 'Which call adds an item to the end of a std::vector?', ['push_back', 'append', 'add', 'push'], 0, 'push_back adds to the end.'],
+    ['classes', 'What does public: do in a class?', ['Lets code outside the class use the members after it', 'Makes the class copyable', 'Chooses the file location', 'Orders the constructors'], 0, 'Members are private by default. public: opens them up.']
+  ]
+};
+const QUIZ = [];
+LANG_ORDER.forEach(l => QUIZ_RAW[l].forEach((r, i) => QUIZ.push({ id: l + i, lang: l, topic: r[0], q: r[1], o: r[2], a: r[3], e: r[4] })));
+
+/* ---------- Analysis layer: language detection and beginner-mistake checks ---------- */
+function detectLanguage(code) {
+  const s = { py: 0, js: 0, java: 0, cpp: 0 };
+  const add = (l, re, n) => { if (re.test(code)) s[l] += n; };
+  add('py', /^\s*def\s+\w+\s*\(/m, 3);
+  add('py', /^\s*(elif|except|from \w+ import|import \w+)\b/m, 2);
+  add('py', /(^|\s)print[\s(]/m, 1);
+  add('py', /\bself\b/, 2);
+  add('py', /\b(None|True|False)\b/, 1);
+  add('py', /^\s*#(?!include)/m, 1);
+  if (!/[{};]/.test(code)) s.py += 1;
+  add('js', /\b(let|const)\s+[A-Za-z_$][\w$]*\s*=/, 2);
+  add('js', /=>/, 2);
+  add('js', /console\.log/, 4);
+  add('js', /\bfunction\b/, 2);
+  add('js', /===/, 2);
+  add('js', /\bvar\b/, 1);
+  add('java', /System\.out\.print/, 4);
+  add('java', /public\s+static\s+void\s+main/, 4);
+  add('java', /\bpublic\s+class\b/, 3);
+  add('java', /ArrayList|HashMap/, 2);
+  add('java', /\bimport\s+java\./, 3);
+  add('java', /\bString\s+\w+\s*[=;]/, 1);
+  add('java', /\bboolean\b/, 1);
+  add('cpp', /#include\s*</, 4);
+  add('cpp', /std::/, 3);
+  add('cpp', /\b(cout|cin)\b/, 3);
+  add('cpp', /using\s+namespace\s+std/, 3);
+  add('cpp', /\bint\s+main\s*\(/, 3);
+  add('cpp', /vector</, 2);
+  const ranked = LANG_ORDER.slice().sort((a, b) => s[b] - s[a]);
+  if (s[ranked[0]] < 2 || s[ranked[0]] === s[ranked[1]]) return null;
+  return { lang: ranked[0], score: s[ranked[0]] };
+}
+
+/* Walks the code once, skipping strings and comments, and checks bracket and quote balance. */
+function scan(code, lang) {
+  const lines = code.replace(/\r/g, '').split('\n');
+  const clean = [], stack = [], issues = [];
+  const partner = { ')': '(', ']': '[', '}': '{' };
+  let inBlock = false, inTpl = false, tri = null;
+  lines.forEach((raw, i) => {
+    const n = i + 1;
+    let out = '', q = null;
+    for (let k = 0; k < raw.length; k++) {
+      const c = raw[k], d = raw[k + 1];
+      if (tri) { if (raw.startsWith(tri, k)) { tri = null; k += 2; } continue; }
+      if (inBlock) { if (c === '*' && d === '/') { inBlock = false; k++; } continue; }
+      if (inTpl) { if (c === '\\') { k++; continue; } if (c === '`') inTpl = false; continue; }
+      if (q) { if (c === '\\') { k++; continue; } if (c === q) q = null; continue; }
+      if (lang === 'py' && (raw.startsWith('"""', k) || raw.startsWith("'''", k))) { tri = raw.substr(k, 3); out += '""'; k += 2; continue; }
+      if (c === '"' || c === "'") { q = c; out += '""'; continue; }
+      if (c === '`' && lang === 'js') { inTpl = true; out += '""'; continue; }
+      if (lang === 'py') { if (c === '#') break; }
+      else {
+        if (c === '/' && d === '/') break;
+        if (c === '/' && d === '*') { inBlock = true; k++; continue; }
+      }
+      out += c;
+      if (c === '(' || c === '[' || c === '{') stack.push({ c, n });
+      else if (c === ')' || c === ']' || c === '}') {
+        const top = stack.pop();
+        if (!top) issues.push({ line: n, msg: 'There is a closing ' + c + ' with nothing to close.' });
+        else if (top.c !== partner[c]) issues.push({ line: n, msg: 'The ' + c + ' does not match the ' + top.c + ' opened on line ' + top.n + '.' });
+      }
+    }
+    if (q) issues.push({ line: n, msg: 'A piece of text starting on this line is never closed.', str: true });
+    clean.push(out);
+  });
+  stack.forEach(s => issues.push({ line: s.n, msg: 'The ' + s.c + ' opened here is never closed.' }));
+  return { lines, clean, issues };
+}
+
+const STMT = [
+  /^(?:(?:final|static|const|unsigned|signed)\s+)*(?:int|long|short|double|float|char|bool|boolean|byte|String|std::string|auto|var|std::vector<.+?>|ArrayList<.+?>)\s+[\w\[\]]+\s*(=.*)?$/,
+  /^(return|break|continue|throw)\b.*$/,
+  /^[\w.\[\]]+\s*[+\-*\/%]?=[^=].*$/,
+  /^[\w.\[\]]+(\+\+|--)$/,
+  /^(\+\+|--)[\w.]+$/,
+  /^(std::)?c(out|in)\s*(<<|>>).*$/,
+  /^using\s+namespace\s+\w+$/
+];
+const CALL = /^[\w.:]+\s*\(.*\)$/;
+const CONTROL = /^(if|for|while|switch|catch|else|do|try)\b/;
+
+function missingSemicolon(t, nextT) {
+  if (!t || /[;{},(:*\/%&|=<>?]$/.test(t) || /[^+\-][+\-]$/.test(t) || /^[}#@]/.test(t)) return false;
+  if (STMT.some(re => re.test(t))) return true;
+  if (CALL.test(t) && !CONTROL.test(t) && !(nextT && nextT.startsWith('{'))) return true;
+  return false;
+}
+
+function blockTopic(t) {
+  if (/^(if|elif|else)\b/.test(t)) return 'conditionals';
+  if (/^(for|while)\b/.test(t)) return 'loops';
+  if (/^def\b/.test(t)) return 'functions';
+  if (/^class\b/.test(t)) return 'classes';
+  return '';
+}
+
+function lint(code, lang) {
+  const { lines, clean, issues } = scan(code, lang);
+  const out = [];
+  const add = (sev, line, msg, fix, topic) => out.push({ sev, line, msg, fix: fix || '', topic: topic || '' });
+  issues.forEach(i => add('error', i.line, i.msg, i.str ? 'Add the matching quote at the end of the text.' : 'Check that every opening bracket has a partner.'));
+  const nextCode = i => { for (let j = i + 1; j < clean.length; j++) if (clean[j].trim()) return j; return -1; };
+  const indentOf = s => s.match(/^[ \t]*/)[0];
+  const usingStd = /using\s+namespace\s+std/.test(code);
+  const strLines = new Set(issues.filter(i => i.str).map(i => i.line));
+
+  clean.forEach((raw, i) => {
+    const t = raw.trim();
+    if (!t) return;
+    const n = i + 1;
+    const nj = nextCode(i);
+    const nextT = nj === -1 ? '' : clean[nj].trim();
+
+    let cond = null;
+    if (lang === 'py') { const m = t.match(/^(?:if|elif|while)\s+(.*?):?\s*$/); if (m) cond = m[1]; }
+    else { const m = t.match(/^(?:\}\s*)?(?:else\s+)?(?:if|while)\s*\((.*)\)\s*\{?\s*$/); if (m) cond = m[1]; }
+    if (cond !== null && !cond.includes(':=') && /=/.test(cond.replace(/[=!<>]=|=>/g, ''))) {
+      add('error', n, 'A single = assigns a value. A condition needs a comparison.', 'Use ' + (lang === 'js' ? '=== ' : '== ') + 'to compare.', 'conditionals');
+    }
+
+    if (lang === 'py') {
+      if (/^(if|elif|else|for|while|def|class|try|except|finally|with)\b/.test(t) && !t.includes(':') && !/[,\\(\[{]\s*$/.test(t)) {
+        add('error', n, 'This line starts a block but does not end with a colon.', 'Add : at the end of the line.', blockTopic(t));
+      }
+      if (/^(if|elif|else|for|while|def|class|try|except|finally|with)\b.*:\s*$/.test(t)) {
+        if (nj === -1 || indentOf(lines[nj]).length <= indentOf(lines[i]).length) {
+          add('error', n, 'A block starts here but the next line is not indented.', 'Indent the body by 4 spaces.', blockTopic(t));
+        }
+      }
+      if (/^else\s+if\b/.test(t)) add('error', n, 'Python has no else if.', 'Write elif instead.', 'conditionals');
+      if (/&&|\|\|/.test(t)) add('error', n, 'Python does not use && or ||.', 'Write and, or or instead.', 'operators');
+      if (/!(?!=)/.test(t)) add('error', n, 'Python does not use ! for not.', 'Write not instead.', 'operators');
+      if (/===|!==/.test(t)) add('error', n, 'Python has no === operator.', 'Use == to compare.', 'operators');
+      if (/^print\s+[^(\s=]/.test(t)) add('error', n, 'In Python 3, print is a function.', 'Write print(...) with parentheses.', 'functions');
+      if (/;\s*$/.test(t)) add('tip', n, 'Python does not need a semicolon at the end of a line.', 'You can remove it.');
+      if (/^(let|const|var)\s/.test(t)) add('error', n, 'let, const and var belong to JavaScript.', 'In Python just write name = value.', 'variables');
+    }
+    if (lang === 'js') {
+      if (/\bvar\b/.test(t)) add('tip', n, 'var is the older way to declare a variable.', 'Use let, or const when the value never changes.', 'variables');
+      if (/[^=!<>]==[^=]|!=[^=]/.test(t)) add('tip', n, '== converts types before it compares.', 'Prefer === and !==.', 'operators');
+      if (/(^|[^.\w])print\s*\(/.test(t)) add('error', n, 'JavaScript has no print function.', 'Use console.log(...).', 'functions');
+      if (/^elif\b/.test(t)) add('error', n, 'JavaScript has no elif.', 'Write } else if (...) { instead.', 'conditionals');
+      if (/\.length\s*\(/.test(t)) add('error', n, 'length is a property, not a method.', 'Write arr.length without parentheses.', 'arrays');
+      if (/\.append\s*\(/.test(t)) add('error', n, 'JavaScript arrays have no append.', 'Use push.', 'arrays');
+      if (/^def\s/.test(t)) add('error', n, 'def is Python.', 'Write function name() { } in JavaScript.', 'functions');
+    }
+    if (lang === 'java') {
+      if (/\bstring\s+\w+/.test(t)) add('error', n, 'Types are case-sensitive in Java.', 'Write String with a capital S.', 'datatypes');
+      if (/[=!]=\s*""|""\s*[=!]=/.test(t)) add('warn', n, 'Using == on text compares object identity, not the characters.', 'Use a.equals(b).', 'conditionals');
+      if (/(^|[^.\w])println?\s*\(/.test(t)) add('error', n, 'print and println need their full name.', 'Write System.out.println(...).', 'functions');
+      if (/\bmain\s*\(/.test(t) && !/public\s+static\s+void\s+main\s*\(\s*String/.test(t)) add('warn', n, 'This main method will not be found by Java.', 'Use public static void main(String[] args).', 'functions');
+      if (!strLines.has(n) && missingSemicolon(t, nextT)) add('error', n, 'This statement is missing a semicolon.', 'Add ; at the end of the line.');
+    }
+    if (lang === 'cpp') {
+      if (/(^|[^:\w])(cout|cin|endl)\b/.test(t) && !usingStd) add('error', n, 'cout, cin and endl live in the std namespace.', 'Write std::cout, or add using namespace std; near the top.');
+      if (/System\.out/.test(t)) add('error', n, 'System.out is Java.', 'Use std::cout << ... in C++.');
+      if (/^main\s*\(/.test(t)) add('error', n, 'main needs a return type.', 'Write int main().', 'functions');
+      if (!strLines.has(n) && missingSemicolon(t, nextT)) add('error', n, 'This statement is missing a semicolon.', 'Add ; at the end of the line.');
+    }
+  });
+
+  if (lang === 'cpp' && /\b(cout|cin)\b/.test(code) && !/#include\s*<iostream>/.test(code)) {
+    const at = clean.findIndex(l => /\b(cout|cin)\b/.test(l));
+    add('error', at + 1, 'cout and cin need the iostream header.', 'Add #include <iostream> at the top.');
+  }
+  if (lang === 'py') {
+    const tabs = lines.some(l => /^\t/.test(l)), spaces = lines.some(l => /^ +\S/.test(l));
+    if (tabs && spaces) add('warn', lines.findIndex(l => /^\t/.test(l)) + 1, 'The file mixes tabs and spaces for indentation.', 'Pick spaces and use them everywhere.');
+  }
+
+  const seen = new Set();
+  const rank = { error: 0, warn: 1, tip: 2 };
+  return out.filter(f => { const k = f.line + f.msg; if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => a.line - b.line || rank[a.sev] - rank[b.sev]);
+}
+
+function analyze(code, selected) {
+  const found = detectLanguage(code);
+  const lang = found ? found.lang : selected;
+  return { lang, switched: !!found && found.lang !== selected, detected: !!found, lines: code.replace(/\r/g, '').split('\n'), findings: lint(code, lang) };
+}
+
+/* ---------- State: in memory only ---------- */
+const state = { lang: 'py', prog: {}, quiz: { asked: new Set(), score: 0, total: 0 } };
+function freshProgress() {
+  LANG_ORDER.forEach(l => { state.prog[l] = {}; });
+  state.quiz = { asked: new Set(), score: 0, total: 0 };
+}
+freshProgress();
+
+const $ = id => document.getElementById(id);
+const log = $('log'), input = $('input');
+function h(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+/* Renders `code` and **bold** spans using text nodes only. */
+function inline(parent, text) {
+  const re = /(`[^`]+`)|(\*\*[^*]+\*\*)/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) parent.append(text.slice(last, m.index));
+    const tok = m[0];
+    parent.append(tok[0] === '`' ? h('code', '', tok.slice(1, -1)) : h('strong', '', tok.slice(2, -2)));
+    last = m.index + tok.length;
+  }
+  if (last < text.length) parent.append(text.slice(last));
+  return parent;
+}
+
+/* ---------- Progress Tracker ---------- */
+function mark(lang, topic, kind) {
+  const p = state.prog[lang][topic] || (state.prog[lang][topic] = {});
+  p[kind] = true;
+  renderSide();
+}
+function renderSide() {
+  const lang = state.lang, p = state.prog[lang];
+  $('plang').textContent = LANGS[lang].name;
+  const done = TOPICS.filter(t => p[t.id] && (p[t.id].seen || p[t.id].passed)).length;
+  $('barfill').style.width = (done / TOPICS.length * 100) + '%';
+  $('plabel').textContent = done + ' of ' + TOPICS.length + ' topics covered';
+  const ul = $('topics');
+  ul.textContent = '';
+  TOPICS.forEach(t => {
+    const st = p[t.id] || {};
+    const li = h('li');
+    const b = h('button', (st.seen || st.passed) ? 'done' + (st.passed ? ' passed' : '') : '');
+    b.type = 'button';
+    b.append(h('span', 'tick', '✓'));
+    b.append(h('span', 't', t.title));
+    b.append(h('span', 's', st.passed ? 'Quiz passed' : st.seen ? 'Explained' : ''));
+    b.addEventListener('click', () => { addUser('Explain ' + t.title.toLowerCase()); explain(t.id, state.lang); });
+    li.append(b);
+    ul.append(li);
+  });
+  const q = state.quiz;
+  $('qscore').textContent = q.total ? q.score + ' correct out of ' + q.total + ' answered' : 'No questions answered yet';
+}
+function setLang(l) {
+  state.lang = l;
+  const box = $('langs');
+  box.textContent = '';
+  LANG_ORDER.forEach(k => {
+    const b = h('button', 'lang', LANGS[k].name);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(k === l));
+    b.addEventListener('click', () => { if (k !== state.lang) { setLang(k); addBot([{ t: 'p', x: 'Switched to **' + LANGS[k].name + '**. Explanations and quizzes will use it from now on.' }]); } });
+    box.append(b);
+  });
+  renderSide();
+}
+
+/* ---------- Rendering chat blocks ---------- */
+function codeBox(label) {
+  const box = h('div', 'cb');
+  box.append(h('div', 'cb-h', label));
+  return box;
+}
+function renderBlock(b) {
+  switch (b.t) {
+    case 'h': return h('h3', '', b.x);
+    case 'p': return inline(h('p'), b.x);
+    case 'note': return inline(h('p', 'note'), b.x);
+    case 'list': { const ul = h('ul'); b.items.forEach(i => ul.append(inline(h('li'), i))); return ul; }
+    case 'code': {
+      const box = codeBox(b.lang), pre = h('pre'), c = h('code', '', b.x);
+      pre.append(c); box.append(pre); return box;
+    }
+    case 'annot': {
+      const box = codeBox(b.lang + ' · your code'), pre = h('pre'), c = h('code');
+      b.lines.slice(0, 60).forEach((l, i) => {
+        const s = h('span', 'ln' + (b.bad.has(i + 1) ? ' bad' : ''));
+        s.append(h('i', '', String(i + 1)));
+        s.append(l);
+        c.append(s);
+      });
+      if (b.lines.length > 60) c.append(h('span', 'ln', '… ' + (b.lines.length - 60) + ' more lines'));
+      pre.append(c); box.append(pre); return box;
+    }
+    case 'findings': {
+      const wrap = h('div', 'findings');
+      b.items.forEach(f => {
+        const row = h('div', 'f');
+        row.append(h('span', 'pill ' + f.sev, f.sev === 'warn' ? 'Warning' : f.sev === 'tip' ? 'Tip' : 'Error'));
+        row.append(h('span', 'where', 'Line ' + f.line));
+        row.append(inline(h('span', 'what'), f.msg));
+        if (f.fix || f.topic) {
+          const fix = h('div', 'fix');
+          inline(fix, f.fix);
+          if (f.topic) {
+            const btn = h('button', 'mini', 'Review ' + TOPIC_BY_ID[f.topic].title.toLowerCase());
+            btn.type = 'button';
+            btn.addEventListener('click', () => { addUser('Explain ' + TOPIC_BY_ID[f.topic].title.toLowerCase()); explain(f.topic, b.lang); });
+            fix.append(btn);
+          }
+          row.append(fix);
+        }
+        wrap.append(row);
+      });
+      return wrap;
+    }
+    case 'quiz': return makeQuiz(b.q);
+  }
+  return h('p');
+}
+function addBot(blocks) {
+  const m = h('div', 'msg bot');
+  m.append(h('span', 'av', '</>'));
+  const body = h('div', 'body');
+  blocks.forEach(b => body.append(renderBlock(b)));
+  m.append(body);
+  log.append(m);
+  log.scrollTop += m.getBoundingClientRect().top - log.getBoundingClientRect().top - 8;
+}
+function addUser(text) {
+  const m = h('div', 'msg user'), body = h('div', 'body');
+  body.append(text.includes('\n') ? h('pre', '', text) : h('p', '', text));
+  m.append(body);
+  log.append(m);
+  log.scrollTop = log.scrollHeight;
+}
+function setChips(list) {
+  const box = $('chips');
+  box.textContent = '';
+  list.forEach(c => {
+    const b = h('button', 'chip', c.label);
+    b.type = 'button';
+    b.addEventListener('click', () => {
+      if (c.fill) { input.value = c.fill; autosize(); input.focus(); return; }
+      addUser(c.label);
+      c.fn();
+    });
+    box.append(b);
+  });
+}
+const SAMPLE = 'def total(nums)\n    s = 0\n    for n in nums:\n        if n % 2 = 0:\n            s += n\n    return s\n\nprint total([1, 2, 3, 4])';
+function defaultChips() {
+  return [
+    { label: 'Explain loops', fn: () => explain('loops', state.lang) },
+    { label: 'Quiz me', fn: () => startQuiz(state.lang, null) },
+    { label: 'Try the code checker', fill: SAMPLE },
+    { label: 'Show my progress', fn: showProgress }
+  ];
+}
+function topicChips() {
+  return TOPICS.map(t => ({ label: t.title, fn: () => explain(t.id, state.lang) }));
+}
+
+/* ---------- Concept Engine ---------- */
+function nextTopic(lang, id) {
+  const p = state.prog[lang], i = TOPICS.findIndex(t => t.id === id);
+  const order = TOPICS.slice(i + 1).concat(TOPICS.slice(0, i));
+  return order.find(t => !(p[t.id] && (p[t.id].seen || p[t.id].passed))) || null;
+}
+function explain(id, lang) {
+  const t = TOPIC_BY_ID[id], ex = t.ex[lang], L = LANGS[lang].name;
+  mark(lang, id, 'seen');
+  addBot([
+    { t: 'h', x: t.title + ' in ' + L },
+    { t: 'p', x: t.concept },
+    { t: 'code', x: ex.code, lang: L },
+    { t: 'note', x: ex.note },
+    { t: 'p', x: '**Common mistakes**' },
+    { t: 'list', items: t.mistakes }
+  ]);
+  const other = LANG_ORDER[(LANG_ORDER.indexOf(lang) + 1) % LANG_ORDER.length];
+  const nxt = nextTopic(lang, id);
+  const chips = [
+    { label: 'Quiz me on ' + t.title.toLowerCase(), fn: () => startQuiz(lang, id) },
+    { label: 'Show it in ' + LANGS[other].name, fn: () => { setLang(other); explain(id, other); } }
+  ];
+  if (nxt) chips.push({ label: 'Next: ' + nxt.title, fn: () => explain(nxt.id, lang) });
+  setChips(chips);
+}
+
+/* ---------- Quiz Engine ---------- */
+function startQuiz(lang, topic) {
+  let pool = QUIZ.filter(q => q.lang === lang && (!topic || q.topic === topic));
+  let fresh = pool.filter(q => !state.quiz.asked.has(q.id));
+  let again = false;
+  if (!fresh.length) { pool.forEach(q => state.quiz.asked.delete(q.id)); fresh = pool; again = true; }
+  const q = fresh[0];
+  state.quiz.asked.add(q.id);
+  const blocks = [];
+  if (again) blocks.push({ t: 'note', x: 'You have answered every question in this set, so it starts over.' });
+  blocks.push({ t: 'quiz', q: Object.assign({}, q, { ctx: { lang, topic } }) });
+  addBot(blocks);
+  setChips([{ label: 'Stop quiz', fn: () => { addBot([{ t: 'p', x: 'Quiz stopped. Your score is saved in the panel on the right.' }]); setChips(defaultChips()); } }]);
+}
+function makeQuiz(q) {
+  const box = h('div', 'quiz');
+  box.append(h('div', 'qmeta', LANGS[q.lang].name + ' · ' + TOPIC_BY_ID[q.topic].title));
+  box.append(inline(h('div', 'q'), q.q));
+  const opts = h('div', 'opts'), after = h('div'), btns = [];
+  box.append(opts, after);
+  q.o.forEach((text, i) => {
+    const b = h('button', 'opt', text);
+    b.type = 'button';
+    b.addEventListener('click', () => {
+      btns.forEach((x, j) => { x.disabled = true; if (j === q.a) x.classList.add('right'); });
+      const ok = i === q.a;
+      if (!ok) b.classList.add('wrong');
+      state.quiz.total++;
+      if (ok) { state.quiz.score++; mark(q.lang, q.topic, 'passed'); } else renderSide();
+      after.className = 'opts';
+      after.append(h('p', 'verdict ' + (ok ? 'right' : 'wrong'), ok ? 'Correct.' : 'Not quite. The answer is: ' + q.o[q.a]));
+      after.append(inline(h('p', 'note'), q.e));
+      const row = h('div', 'chips');
+      const next = h('button', 'chip', 'Next question'), learn = h('button', 'chip', 'Explain ' + TOPIC_BY_ID[q.topic].title.toLowerCase());
+      next.type = learn.type = 'button';
+      next.addEventListener('click', () => { next.disabled = true; startQuiz(q.ctx.lang, q.ctx.topic); });
+      learn.addEventListener('click', () => { addUser('Explain ' + TOPIC_BY_ID[q.topic].title.toLowerCase()); explain(q.topic, q.lang); });
+      row.append(next, learn);
+      after.append(row);
+      log.scrollTop += box.getBoundingClientRect().bottom - log.getBoundingClientRect().bottom + 12;
+    });
+    opts.append(b);
+    btns.push(b);
+  });
+  return box;
+}
+
+/* ---------- Code Analyzer front end ---------- */
+function reviewCode(code) {
+  if (code.length > 8000) {
+    addBot([{ t: 'p', x: 'That is a lot of code for me to check at once. Paste up to about 150 lines.' }]);
+    return;
+  }
+  const r = analyze(code, state.lang);
+  const L = LANGS[r.lang].name;
+  if (r.lang !== state.lang) setLang(r.lang);
+  const n = { error: 0, warn: 0, tip: 0 };
+  r.findings.forEach(f => n[f.sev]++);
+  const bits = [];
+  if (n.error) bits.push(n.error + (n.error === 1 ? ' error' : ' errors'));
+  if (n.warn) bits.push(n.warn + (n.warn === 1 ? ' warning' : ' warnings'));
+  if (n.tip) bits.push(n.tip + (n.tip === 1 ? ' tip' : ' tips'));
+  const blocks = [{ t: 'h', x: 'Code review: ' + L }];
+  blocks.push({ t: 'p', x: r.detected ? (r.switched ? 'This looks like **' + L + '**, so I switched language and checked it as ' + L + '.' : 'Detected language: **' + L + '**.') : 'I could not tell the language from this snippet, so I checked it as **' + L + '**.' });
+  blocks.push({ t: 'p', x: bits.length ? 'Found ' + bits.join(', ') + '.' : 'No problems found by the checks I run.' });
+  blocks.push({ t: 'annot', lines: r.lines, bad: new Set(r.findings.map(f => f.line)), lang: L });
+  if (r.findings.length) blocks.push({ t: 'findings', items: r.findings, lang: r.lang });
+  blocks.push({ t: 'note', x: 'I check brackets, quotes, colons, semicolons and common slips. I cannot run your code, so test it as well.' });
+  addBot(blocks);
+  const topics = [...new Set(r.findings.map(f => f.topic).filter(Boolean))];
+  const chips = topics.slice(0, 2).map(id => ({ label: 'Explain ' + TOPIC_BY_ID[id].title.toLowerCase(), fn: () => explain(id, r.lang) }));
+  chips.push({ label: 'Quiz me', fn: () => startQuiz(r.lang, null) });
+  setChips(chips);
+}
+
+/* ---------- Interaction logic: classify intent, route to an engine ---------- */
+function langFromText(t) {
+  if (/(^|\W)(c\+\+|cpp)(?=\W|$)/.test(t)) return 'cpp';
+  if (/\b(javascript|js|node|nodejs)\b/.test(t)) return 'js';
+  if (/\bjava\b/.test(t)) return 'java';
+  if (/\b(python|py)\b/.test(t)) return 'py';
+  return null;
+}
+const TOPIC_KW = [
+  ['classes', /class|object|\boop\b|constructor|inherit|instance/],
+  ['arrays', /array|\blists?\b|vector|collection|\bindex/],
+  ['loops', /\bloops?\b|\bfor\b|\bwhile\b|iterat|repeat/],
+  ['conditionals', /conditional|\bif\b|\belse\b|elif|switch|branch|decision/],
+  ['functions', /function|method|\bdef\b|\breturn|parameter|argument|lambda/],
+  ['operators', /operator|arithmetic|modulo|modulus|comparison|logical|remainder/],
+  ['datatypes', /data ?types?|\btypes?\b|\binteger\b|\bfloat|\bstring|\bboolean|\bbool\b|\bdouble\b/],
+  ['variables', /variabl|declare|assign|\bconst\b|\blet\b/]
+];
+function topicFromText(t) {
+  for (const [id, re] of TOPIC_KW) if (re.test(t)) return id;
+  return null;
+}
+function looksLikeCode(text) {
+  const strong = /[{};]\s*$|=>|console\.log|System\.out|std::|#include|\bdef\s+\w+\s*\(|(^|\s)print\s*\(|^\s*(int|double|float|bool|boolean|String|let|const|var)\s+\w+\s*(=|;)|^\s*(if|elif|while|for)\b.*[:{]\s*$|^\s*[\w.]+\s*=\s*[^=]/m;
+  if (!strong.test(text)) return false;
+  const oneLine = text.split('\n').filter(l => l.trim()).length < 2;
+  if (oneLine && /^(what|how|why|explain|when|can you|could you|tell me|show me|give me|which|is|are|do|does)\b/i.test(text.trim())) return false;
+  return true;
+}
+
+function greet() {
+  addBot([{ t: 'p', x: 'Hello. Pick a topic, paste some code, or ask for a quiz.' }]);
+  setChips(defaultChips());
+}
+function help() {
+  addBot([
+    { t: 'h', x: 'What I can do' },
+    { t: 'list', items: [
+      '**Explain a topic.** Try `explain loops in Java` or `how do functions work in C++`.',
+      '**Check your code.** Paste it and I will find the language and flag common mistakes.',
+      '**Quiz you.** Try `quiz me` or `quiz me on python arrays`.',
+      '**Track progress.** The panel on the right fills in as you go. Ask `show my progress` for a summary.'
+    ] },
+    { t: 'p', x: 'Topics: ' + TOPICS.map(t => t.title).join(', ') + '.' }
+  ]);
+  setChips(topicChips());
+}
+function showProgress() {
+  const items = LANG_ORDER.map(l => {
+    const p = state.prog[l];
+    const c = TOPICS.filter(t => p[t.id] && (p[t.id].seen || p[t.id].passed)).length;
+    return '**' + LANGS[l].name + '**: ' + c + ' of ' + TOPICS.length + ' topics covered';
+  });
+  const q = state.quiz;
+  const pl = state.prog[state.lang];
+  const next = TOPICS.find(t => !(pl[t.id] && (pl[t.id].seen || pl[t.id].passed))) || null;
+  addBot([
+    { t: 'h', x: 'Your progress' },
+    { t: 'list', items: items },
+    { t: 'p', x: q.total ? 'Quiz score: **' + q.score + ' of ' + q.total + '**.' : 'You have not answered a quiz question yet.' },
+    { t: 'note', x: next ? 'Suggested next topic in ' + LANGS[state.lang].name + ': ' + next.title + '.' : 'You have covered every topic in ' + LANGS[state.lang].name + '.' }
+  ]);
+  const chips = [];
+  if (next) chips.push({ label: 'Explain ' + next.title.toLowerCase(), fn: () => explain(next.id, state.lang) });
+  chips.push({ label: 'Quiz me', fn: () => startQuiz(state.lang, null) });
+  setChips(chips);
+}
+function fallback() {
+  addBot([
+    { t: 'p', x: 'I could not match that to a topic. I can explain these, in any of the four languages:' },
+    { t: 'p', x: TOPICS.map(t => t.title).join(', ') + '.' },
+    { t: 'note', x: 'You can also paste code for me to check, or ask for a quiz.' }
+  ]);
+  setChips(topicChips());
+}
+
+function respond(text) {
+  const t = text.trim().toLowerCase();
+  const said = langFromText(t);
+  if (looksLikeCode(text)) return reviewCode(text);
+  if (/^(hi|hello|hey|yo)\b|^good (morning|afternoon|evening)\b/.test(t) && t.length < 40) return greet();
+  if (/^(thanks|thank you|thx)\b/.test(t)) { addBot([{ t: 'p', x: 'You are welcome. Ask for another topic or a quiz whenever you are ready.' }]); return setChips(defaultChips()); }
+  if (/\b(progress|syllabus|checklist|covered|how am i doing|my score)\b/.test(t)) return showProgress();
+  if (said && said !== state.lang) setLang(said);
+  if (/\b(quiz|test me|practice|mcq|question me)\b/.test(t)) return startQuiz(said || state.lang, topicFromText(t));
+  if (/\b(help|what can you do|commands|topics)\b/.test(t) || /how does (this|it) work/.test(t)) return help();
+  const topic = topicFromText(t);
+  if (topic) return explain(topic, said || state.lang);
+  if (said) {
+    addBot([{ t: 'p', x: 'Switched to **' + LANGS[said].name + '**. Which topic would you like?' }]);
+    return setChips(topicChips());
+  }
+  fallback();
+}
+
+/* ---------- Wiring ---------- */
+function autosize() {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 220) + 'px';
+}
+input.addEventListener('input', autosize);
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('form').requestSubmit(); }
+});
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  const text = input.value;
+  if (!text.trim()) return;
+  input.value = '';
+  autosize();
+  addUser(text.trim());
+  respond(text);
+});
+$('qstart').addEventListener('click', () => startQuiz(state.lang, null));
+let resetTimer = null;
+$('reset').addEventListener('click', () => {
+  const b = $('reset');
+  if (!resetTimer) {
+    b.textContent = 'Click again to clear progress and quiz score';
+    resetTimer = setTimeout(() => { resetTimer = null; b.textContent = 'Reset progress'; }, 3500);
+    return;
+  }
+  clearTimeout(resetTimer);
+  resetTimer = null;
+  b.textContent = 'Reset progress';
+  freshProgress();
+  renderSide();
+  addBot([{ t: 'p', x: 'Progress and quiz score cleared.' }]);
+});
+
+setLang('py');
+addBot([
+  { t: 'h', x: 'Hi, I am your programming tutor.' },
+  { t: 'p', x: 'Ask me about a topic in Python, JavaScript, Java or C++, paste code and I will check it for common mistakes, or take a quiz. I run entirely in your browser, so there is nothing to install and nothing is sent anywhere.' },
+  { t: 'list', items: ['`explain loops in Java`', '`quiz me on python functions`', 'Paste any snippet to have it reviewed'] }
+]);
+setChips(defaultChips());
+</script>
+
+</body></html>
